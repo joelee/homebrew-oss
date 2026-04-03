@@ -1,0 +1,32 @@
+name: Test Formula
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-formula:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out tap repository
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew tap
+        run: |
+          brew tap joelee/oss "$GITHUB_WORKSPACE"
+
+      - name: Install formula from source
+        run: |
+          brew install --build-from-source joelee/oss/cli-bot
+
+      - name: Run formula test
+        run: |
+          brew test joelee/oss/cli-bot
+
+      - name: Audit formula
+        run: |
+          brew audit --strict joelee/oss/cli-bot

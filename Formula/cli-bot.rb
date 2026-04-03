@@ -21,7 +21,7 @@ class CliBot < Formula
 
       Prerequisites - Ollama must be installed and running:
         brew install ollama
-        brew restart ollama
+        brew services restart ollama
 
       Pull the default model before first use:
         ollama pull lfm2:latest

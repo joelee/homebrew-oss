@@ -25,7 +25,6 @@ class CliBot < Formula
 
       Pull the default model before first use:
         ollama pull lfm2:latest
-        
     EOS
   end
 

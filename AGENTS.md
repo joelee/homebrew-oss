@@ -43,7 +43,7 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 `Formula/cli-bot.rb` currently:
 
 - installs from `https://static.crates.io/crates/cli-bot/cli-bot-0.1.1.crate`
-- uses `sha256 = 9a2f13aad6ad135793b0ae7b29e6ffba5efbf67dc97d813947da32907f0501af`
+- uses the checksum of the published crates.io artifact, not the local `target/package` archive
 - builds with `cargo install`
 - depends on `rust` at build time
 - includes `caveats` about Ollama and the default `lfm2:latest` model

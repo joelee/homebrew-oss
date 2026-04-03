@@ -25,7 +25,7 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 
 - The tap has been scaffolded locally.
 - A `cli-bot` formula exists and installs from the published crates.io package.
-- The formula currently targets `cli-bot` version `0.1.0`.
+- The formula currently targets `cli-bot` version `0.1.1`.
 - The formula checksum currently matches the crates.io release metadata.
 - A macOS GitHub Actions workflow exists at `.github/workflows/test-formula.yml`.
 - The workflow is intended to run `brew install`, `brew test`, and `brew audit` for `joelee/oss/cli-bot`.
@@ -42,8 +42,8 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 
 `Formula/cli-bot.rb` currently:
 
-- installs from `https://static.crates.io/crates/cli-bot/cli-bot-0.1.0.crate`
-- uses `sha256 = 9702de995e95455d28d86a856b1ec43cdfc5e580d84952d6c4ef45915770eb0e`
+- installs from `https://static.crates.io/crates/cli-bot/cli-bot-0.1.1.crate`
+- uses `sha256 = 9a2f13aad6ad135793b0ae7b29e6ffba5efbf67dc97d813947da32907f0501af`
 - builds with `cargo install`
 - depends on `rust` at build time
 - includes `caveats` about Ollama and the default `lfm2:latest` model

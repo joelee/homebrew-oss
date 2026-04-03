@@ -20,7 +20,7 @@ curl -s https://crates.io/api/v1/crates/cli-bot | jq -r '.versions[0].checksum'
 Or compute it directly from the downloaded crate:
 
 ```bash
-curl -L https://static.crates.io/crates/cli-bot/cli-bot-0.1.0.crate | shasum -a 256
+curl -L https://static.crates.io/crates/cli-bot/cli-bot-0.1.1.crate | shasum -a 256
 ```
 
 ## Local Validation

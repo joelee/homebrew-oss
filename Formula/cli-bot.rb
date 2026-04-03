@@ -1,8 +1,8 @@
 class CliBot < Formula
   desc "Translate natural-language requests into shell commands with Ollama"
   homepage "https://github.com/joelee/cli-bot"
-  url "https://static.crates.io/crates/cli-bot/cli-bot-0.1.0.crate"
-  sha256 "9702de995e95455d28d86a856b1ec43cdfc5e580d84952d6c4ef45915770eb0e"
+  url "https://static.crates.io/crates/cli-bot/cli-bot-0.1.1.crate"
+  sha256 "9a2f13aad6ad135793b0ae7b29e6ffba5efbf67dc97d813947da32907f0501af"
   license "Apache-2.0"
 
   depends_on "rust" => :build
@@ -19,8 +19,13 @@ class CliBot < Formula
         - ~/.config/cli-bot/cli-bot.toml
         - /etc/cli-bot.toml
 
+      Prerequisites - Ollama must be installed and running:
+        brew install ollama
+        brew restart ollama
+
       Pull the default model before first use:
         ollama pull lfm2:latest
+        
     EOS
   end
 

@@ -20,7 +20,7 @@ curl -s https://crates.io/api/v1/crates/cli-bot | jq -r '.versions[0].checksum'
 Or compute it directly from the downloaded crate:
 
 ```bash
-curl -L https://static.crates.io/crates/cli-bot/cli-bot-0.1.2.crate | shasum -a 256
+curl -L https://static.crates.io/crates/cli-bot/cli-bot-0.2.1.crate | shasum -a 256
 ```
 
 Use the checksum of the published crates.io download, not the checksum of a local `target/package/*.crate` file.

@@ -1,8 +1,8 @@
 class CliBot < Formula
   desc "Translate natural-language requests into shell commands with Ollama"
   homepage "https://github.com/joelee/cli-bot"
-  url "https://static.crates.io/crates/cli-bot/cli-bot-0.2.1.crate"
-  sha256 "32be59ba4ecbfde3b73755435b209f934f08c17c123b8f103bebc070d57eb6ee"
+  url "https://static.crates.io/crates/cli-bot/cli-bot-0.2.3.crate"
+  sha256 "3ea3c13aed8f09982ca13cc2a8d5550f3a53a2cf1b26637d5a2046f37fde827b"
   license "Apache-2.0"
 
   depends_on "rust" => :build

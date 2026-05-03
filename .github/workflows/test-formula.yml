@@ -9,6 +9,12 @@ on:
 
 jobs:
   test-formula:
+    strategy:
+      fail-fast: false
+      matrix:
+        formula:
+          - cli-bot
+          - gmail-tool
     runs-on: macos-latest
 
     steps:
@@ -21,12 +27,12 @@ jobs:
 
       - name: Install formula from source
         run: |
-          brew install --build-from-source joelee/oss/cli-bot
+          brew install --build-from-source "joelee/oss/${{ matrix.formula }}"
 
       - name: Run formula test
         run: |
-          brew test joelee/oss/cli-bot
+          brew test "joelee/oss/${{ matrix.formula }}"
 
       - name: Audit formula
         run: |
-          brew audit --strict joelee/oss/cli-bot
+          brew audit --strict "joelee/oss/${{ matrix.formula }}"

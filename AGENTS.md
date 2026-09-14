@@ -13,10 +13,13 @@ Do not use this repository for implementing application features from upstream p
 Current formulae:
 
 - `Formula/cli-bot.rb`
+- `Formula/gmail-tool.rb`
+- `Formula/passalong.rb`
 
 Intended future install patterns:
 
 - `brew install joelee/oss/cli-bot`
+- `brew install joelee/oss/passalong`
 - `brew install joelee/oss/camwatch`
 
 The repository name is intended to map to the GitHub repository `joelee/homebrew-oss`.
@@ -48,6 +51,15 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 - depends on `rust` at build time
 - includes `caveats` about Ollama and the default `lfm2:latest` model
 
+`Formula/passalong.rb`:
+
+- installs from `https://static.crates.io/crates/passalong/passalong-<version>.crate`, starting at 0.1.5
+- uses the checksum of the published crates.io artifact
+- builds with `cargo install`, depending on `rust` at build time (the crate needs Rust 1.98 or later)
+- includes `caveats` pointing to `passalong init`, `passalong check`, and `passalong service-install`
+- its test stores and prints text through a local store in the test folder, so it needs no SSH server or network
+- is updated by `scripts/update-homebrew-formula.sh vX.Y.Z [TAP_DIR]` in the upstream repository, which sets `url` and `sha256` from crates.io
+
 ## Recommended Release Update Flow
 
 When `cli-bot` publishes a new crates.io version:
@@ -60,6 +72,11 @@ When `cli-bot` publishes a new crates.io version:
    `brew test joelee/oss/cli-bot`
    `brew audit --strict joelee/oss/cli-bot`
 5. Commit and push the tap update
+
+When `passalong` publishes a new crates.io version, run
+`scripts/update-homebrew-formula.sh vX.Y.Z` from the `passalong`
+repository, validate as above with `passalong` in place of `cli-bot`, then
+commit and push.
 
 ## Known Gaps
 
@@ -77,9 +94,14 @@ When `cli-bot` publishes a new crates.io version:
 
 ## Verification
 
-Useful commands for a Homebrew-focused session on macOS:
+Useful commands for a Homebrew-focused session on macOS. Homebrew 7 and
+later refuse formulae from untrusted taps, and a tap cloned from a local
+folder cannot be trusted by name, so set `HOMEBREW_NO_REQUIRE_TAP_TRUST=1`
+for it, as the workflow does. For the tap from GitHub, run
+`brew trust joelee/oss` instead.
 
 ```bash
+export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 brew tap joelee/oss /path/to/homebrew-oss
 brew install --build-from-source joelee/oss/cli-bot
 brew test joelee/oss/cli-bot

@@ -15,7 +15,13 @@ jobs:
         formula:
           - cli-bot
           - gmail-tool
+          - passalong
     runs-on: macos-latest
+    env:
+      # Homebrew 7 loads formulae only from trusted taps, and a tap cloned
+      # from a local folder cannot be trusted by name. Homebrew calls this
+      # variable deprecated but still honours it.
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
 
     steps:
       - name: Check out tap repository

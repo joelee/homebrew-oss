@@ -7,6 +7,8 @@ class GmailTool < Formula
   sha256 "3bc59823aab8d34487020b5b718459e099657571441f8f35e40cfc1603ff89b5"
   license "MIT"
 
+  depends_on "rust" => :build # for uv_build > maturin
+  depends_on "cryptography" => :no_linkage
   depends_on "python@3.14"
 
   resource "annotated-doc" do
@@ -104,11 +106,6 @@ class GmailTool < Formula
     sha256 "29253a9207ce32b64c3ac6600edc75368f98473906e8fd1043bd6b5b1de2c14a"
   end
 
-  resource "pycparser" do
-    url "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl"
-    sha256 "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"
-  end
-
   resource "pygments" do
     url "https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl"
     sha256 "81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176"
@@ -157,59 +154,6 @@ class GmailTool < Formula
   resource "urllib3" do
     url "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl"
     sha256 "bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4"
-  end
-
-  on_macos do
-    resource "cryptography" do
-      url "https://files.pythonhosted.org/packages/a4/98/40dfe932134bdcae4f6ab5927c87488754bf9eb79297d7e0070b78dd58e9/cryptography-47.0.0-cp311-abi3-macosx_10_9_universal2.whl"
-      sha256 "160ad728f128972d362e714054f6ba0067cab7fb350c5202a9ae8ae4ce3ef1a0"
-    end
-
-    on_arm do
-      resource "cffi" do
-        url "https://files.pythonhosted.org/packages/59/dd/27e9fa567a23931c838c6b02d0764611c62290062a6d4e8ff7863daf9730/cffi-2.0.0-cp314-cp314-macosx_11_0_arm64.whl"
-        sha256 "c654de545946e0db659b3400168c9ad31b5d29593291482c43e3564effbcee13"
-      end
-
-    end
-
-    on_intel do
-      resource "cffi" do
-        url "https://files.pythonhosted.org/packages/92/c4/3ce07396253a83250ee98564f8d7e9789fab8e58858f35d07a9a2c78de9f/cffi-2.0.0-cp314-cp314-macosx_10_13_x86_64.whl"
-        sha256 "fc33c5141b55ed366cfaad382df24fe7dcbc686de5be719b207bb248e3053dc5"
-      end
-
-    end
-
-  end
-
-  on_linux do
-    on_arm do
-      resource "cffi" do
-        url "https://files.pythonhosted.org/packages/d6/43/0e822876f87ea8a4ef95442c3d766a06a51fc5298823f884ef87aaad168c/cffi-2.0.0-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl"
-        sha256 "24b6f81f1983e6df8db3adc38562c83f7d4a0c36162885ec7f7b77c7dcbec97b"
-      end
-
-      resource "cryptography" do
-        url "https://files.pythonhosted.org/packages/34/c6/2733531243fba725f58611b918056b277692f1033373dcc8bd01af1c05d4/cryptography-47.0.0-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl"
-        sha256 "b9a8943e359b7615db1a3ba587994618e094ff3d6fa5a390c73d079ce18b3973"
-      end
-
-    end
-
-    on_intel do
-      resource "cffi" do
-        url "https://files.pythonhosted.org/packages/47/d9/d83e293854571c877a92da46fdec39158f8d7e68da75bf73581225d28e90/cffi-2.0.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
-        sha256 "afb8db5439b81cf9c9d0c80404b60c3cc9c3add93e114dcae767f1477cb53775"
-      end
-
-      resource "cryptography" do
-        url "https://files.pythonhosted.org/packages/00/e3/b27be1a670a9b87f855d211cf0e1174a5d721216b7616bd52d8581d912ed/cryptography-47.0.0-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
-        sha256 "f5c15764f261394b22aef6b00252f5195f46f2ca300bec57149474e2538b31f8"
-      end
-
-    end
-
   end
 
   def install

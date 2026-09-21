@@ -1,8 +1,8 @@
 class Passalong < Formula
   desc "Lightweight cross-platform clipboard and file sharing over SSH"
   homepage "https://github.com/joelee/passalong"
-  url "https://static.crates.io/crates/passalong/passalong-0.2.0.crate"
-  sha256 "a7bcf9f8fcaa6342f6ed2afc3deae7c7e69721e063945ef1da2e520efa252987"
+  url "https://static.crates.io/crates/passalong/passalong-0.2.1.crate"
+  sha256 "cf763517cc287bc16bd6386cc6a727063c0c400138793f33d5b2e3368990564f"
   license "Apache-2.0"
 
   depends_on "rust" => :build

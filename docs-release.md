@@ -24,6 +24,15 @@ scripts/update-homebrew-formula.sh vX.Y.Z
 2. Review `Formula/gmail-tool.rb`
 3. Commit and push
 
+### joedocs
+
+When `joedocs` publishes a new version to crates.io:
+
+1. Open `Formula/joedocs.rb`
+2. Update the crate version in `url`
+3. Update `sha256` to the new crates.io checksum
+4. Commit and push
+
 ### passalong
 
 When `passalong` publishes a new version to crates.io:
@@ -70,6 +79,10 @@ brew audit --strict joelee/oss/cli-bot
 brew install --build-from-source joelee/oss/gmail-tool
 brew test joelee/oss/gmail-tool
 brew audit --strict joelee/oss/gmail-tool
+
+brew install --build-from-source joelee/oss/joedocs
+brew test joelee/oss/joedocs
+brew audit --strict joelee/oss/joedocs
 
 brew install --build-from-source joelee/oss/passalong
 brew test joelee/oss/passalong

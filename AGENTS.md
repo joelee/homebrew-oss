@@ -14,11 +14,13 @@ Current formulae:
 
 - `Formula/cli-bot.rb`
 - `Formula/gmail-tool.rb`
+- `Formula/joedocs.rb`
 - `Formula/passalong.rb`
 
 Intended future install patterns:
 
 - `brew install joelee/oss/cli-bot`
+- `brew install joelee/oss/joedocs`
 - `brew install joelee/oss/passalong`
 - `brew install joelee/oss/camwatch`
 
@@ -51,6 +53,17 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 - depends on `rust` at build time
 - includes `caveats` about Ollama and the default `lfm2:latest` model
 
+`Formula/joedocs.rb`:
+
+- installs from `https://static.crates.io/crates/joedocs/joedocs-<version>.crate`, starting at 0.1.0
+- uses the checksum of the published crates.io artifact
+- builds with `cargo install`, depending on `rust` at build time (the crate needs Rust 1.99 or later)
+- needs `git` at run time and uses the system one, so it declares no `git` dependency
+- has a `service` block, so `brew services start joedocs` runs `joedocs serve` at login, logging to `var/log/joedocs.log`
+- includes `caveats` pointing to `storage.home` in `~/.config/joedocs/config.toml`, `joedocs init`, `project add`, `key create`, and `brew services`
+- its test creates a store, a project and a key in the test folder through `JOEDOCS__STORAGE__*` overrides, runs `joedocs check`, and checks `GET /health` of `joedocs serve` on a free local port, so it needs no network
+- is updated by hand: set `url` and `sha256` from crates.io
+
 `Formula/passalong.rb`:
 
 - installs from `https://static.crates.io/crates/passalong/passalong-<version>.crate`, starting at 0.1.5
@@ -72,6 +85,9 @@ When `cli-bot` publishes a new crates.io version:
    `brew test joelee/oss/cli-bot`
    `brew audit --strict joelee/oss/cli-bot`
 5. Commit and push the tap update
+
+When `joedocs` publishes a new crates.io version, update `url` and `sha256`
+in `Formula/joedocs.rb` as for `cli-bot`, then validate with `joedocs`.
 
 When `passalong` publishes a new crates.io version, run
 `scripts/update-homebrew-formula.sh vX.Y.Z` from the `passalong`

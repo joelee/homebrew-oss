@@ -15,6 +15,7 @@ jobs:
         formula:
           - cli-bot
           - gmail-tool
+          - joedocs
           - passalong
     runs-on: macos-latest
     env:

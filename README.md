@@ -1,9 +1,10 @@
 # homebrew-oss
 
-Homebrew tap for installing `cli-bot`, `gmail-tool`, `passalong`, and other `MyOSS` tools on macOS.
+Homebrew tap for installing `cli-bot`, `gmail-tool`, `joedocs`, `passalong`, and other `MyOSS` tools on macOS.
 
 - `cli-bot` is a Rust CLI that translates natural-language requests into shell commands using Ollama.
 - `gmail-tool` is a Python CLI for Gmail labels, searches, and backup workflows.
+- `joedocs` is a Rust MCP server for multi-project documentation, stored as Markdown with git history and full-text search.
 - `passalong` is a Rust CLI that shares the clipboard and files between machines through a folder on an SSH server.
 
 ## Install
@@ -21,6 +22,7 @@ Then install:
 ```bash
 brew install joelee/oss/cli-bot
 brew install joelee/oss/gmail-tool
+brew install joelee/oss/joedocs
 brew install joelee/oss/passalong
 ```
 
@@ -32,6 +34,7 @@ You can also tap it explicitly:
 brew tap joelee/oss
 brew install cli-bot
 brew install gmail-tool
+brew install joedocs
 brew install passalong
 ```
 
@@ -45,6 +48,10 @@ brew install passalong
 - `gmail-tool`
 - macOS with Homebrew installed
 - Gmail credentials are only needed when you run the CLI against your account, not for installation
+
+- `joedocs`
+- macOS with Homebrew installed
+- `git` (the Xcode Command Line Tools provide it); `joedocs init` sets up the store, and `brew services start joedocs` runs the server
 
 - `passalong`
 - macOS with Homebrew installed
@@ -62,6 +69,8 @@ ollama pull lfm2:latest
 cli-bot --check
 gmail-tool --version
 gmail-tool search --list-actions
+joedocs --version
+joedocs check
 passalong --version
 passalong check
 ```
@@ -81,16 +90,24 @@ When a new `gmail-tool` version is released:
 2. Review `Formula/gmail-tool.rb`
 3. Commit and push the tap update
 
+When a new `joedocs` version is released:
+
+1. Update `Formula/joedocs.rb`
+2. Change the `url` to the new crate version
+3. Change the `sha256` to the new crates.io checksum
+4. Commit and push the tap update
+
 When a new `passalong` version is released:
 
 1. Run `scripts/update-homebrew-formula.sh vX.Y.Z` from the upstream `passalong` repository
 2. Review `Formula/passalong.rb`
 3. Commit and push the tap update
 
-Additional packages can be added alongside `cli-bot`, `gmail-tool`, and `passalong` under `Formula/`.
+Additional packages can be added alongside `cli-bot`, `gmail-tool`, `joedocs`, and `passalong` under `Formula/`.
 
 For the upstream project and docs, see:
 
 - `https://github.com/joelee/cli-bot`
 - `https://github.com/joelee/gmail-tool`
+- `https://github.com/joelee/joedocs-mcp`
 - `https://github.com/joelee/passalong`

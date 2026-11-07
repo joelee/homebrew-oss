@@ -1,113 +1,117 @@
-# homebrew-oss
+<div align="center">
 
-Homebrew tap for installing `cli-bot`, `gmail-tool`, `joedocs`, `passalong`, and other `MyOSS` tools on macOS.
+# 🍺 joelee/oss
 
-- `cli-bot` is a Rust CLI that translates natural-language requests into shell commands using Ollama.
-- `gmail-tool` is a Python CLI for Gmail labels, searches, and backup workflows.
-- `joedocs` is a Rust MCP server for multi-project documentation, stored as Markdown with git history and full-text search.
-- `passalong` is a Rust CLI that shares the clipboard and files between machines through a folder on an SSH server.
+**A Homebrew tap of small, sharp command-line tools: local AI shell help, Gmail automation, an MCP docs server, and clipboard sharing over SSH.**
 
-## Install
+[![Test Formula](https://github.com/joelee/homebrew-oss/actions/workflows/test-formula.yml/badge.svg)](https://github.com/joelee/homebrew-oss/actions/workflows/test-formula.yml)
+![Platform](https://img.shields.io/badge/platform-macOS-lightgrey?logo=apple)
+![Homebrew](https://img.shields.io/badge/homebrew-tap-FBB040?logo=homebrew&logoColor=white)
 
-Homebrew 7 and later load formulae only from taps you trust, so trust and
-tap this one first:
+```bash
+brew trust joelee/oss && brew tap joelee/oss
+```
+
+</div>
+
+---
+
+## 📦 Packages
+
+| Package | What it does | Latest release | Install |
+| --- | --- | --- | --- |
+| [**cli-bot**](https://github.com/joelee/cli-bot) | Turn plain-English requests into shell commands, using a local Ollama model | [![crates.io](https://img.shields.io/crates/v/cli-bot?label=crates.io&color=orange)](https://crates.io/crates/cli-bot) | `brew install joelee/oss/cli-bot` |
+| [**gmail-tool**](https://github.com/joelee/gmail-tool) | Manage Gmail labels, run searches, and back up mail from the terminal | [![PyPI](https://img.shields.io/pypi/v/gmail-tool?label=PyPI&color=blue)](https://pypi.org/project/gmail-tool/) | `brew install joelee/oss/gmail-tool` |
+| [**joedocs**](https://github.com/joelee/joedocs-mcp) | MCP server for multi-project docs, stored as Markdown with git history and full-text search | [![crates.io](https://img.shields.io/crates/v/joedocs?label=crates.io&color=orange)](https://crates.io/crates/joedocs) | `brew install joelee/oss/joedocs` |
+| [**passalong**](https://github.com/joelee/passalong) | Share the clipboard and files between machines through a folder on an SSH server | [![crates.io](https://img.shields.io/crates/v/passalong?label=crates.io&color=orange)](https://crates.io/crates/passalong) | `brew install joelee/oss/passalong` |
+
+## 🚀 Quick start
+
+Homebrew 7 and later load formulae only from taps you trust, so trust and tap this one first:
 
 ```bash
 brew trust joelee/oss
 brew tap joelee/oss
 ```
 
-Then install:
+Then install whichever tools you want, by full name or, once tapped, by short name:
 
 ```bash
-brew install joelee/oss/cli-bot
-brew install joelee/oss/gmail-tool
-brew install joelee/oss/joedocs
-brew install joelee/oss/passalong
+brew install cli-bot gmail-tool joedocs passalong
 ```
 
-Older Homebrew versions tap this repository automatically on first install.
+> [!TIP]
+> On older Homebrew versions, `brew install joelee/oss/<name>` taps this repository automatically, so you can skip `brew tap`.
 
-You can also tap it explicitly:
+Upgrade everything from this tap with the rest of your Homebrew packages:
 
 ```bash
-brew tap joelee/oss
-brew install cli-bot
-brew install gmail-tool
-brew install joedocs
-brew install passalong
+brew update && brew upgrade
 ```
 
-## Requirements
+## 🛠️ Getting started with each tool
 
-- `cli-bot`
-- macOS with Homebrew installed
-- Ollama installed and running locally
-- the desired model pulled into Ollama
+<details>
+<summary><b>cli-bot</b>: natural language to shell commands</summary>
 
-- `gmail-tool`
-- macOS with Homebrew installed
-- Gmail credentials are only needed when you run the CLI against your account, not for installation
-
-- `joedocs`
-- macOS with Homebrew installed
-- `git` (the Xcode Command Line Tools provide it); `joedocs init` sets up the store, and `brew services start joedocs` runs the server
-
-- `passalong`
-- macOS with Homebrew installed
-- An SSH server you can log in to with a key; `passalong init` sets up the connection
-
-Example:
+Needs [Ollama](https://ollama.com) installed and running locally, with a model pulled:
 
 ```bash
-ollama pull lfm2:latest
+brew install ollama
+brew services start ollama
+ollama pull lfm2:latest   # the default model
+
+cli-bot --check           # verify the setup
 ```
 
-## Verify
+</details>
+
+<details>
+<summary><b>gmail-tool</b>: Gmail from the command line</summary>
+
+Gmail credentials are needed only when you run it against your account, not to install it.
 
 ```bash
-cli-bot --check
 gmail-tool --version
 gmail-tool search --list-actions
-joedocs --version
-joedocs check
-passalong --version
-passalong check
 ```
 
-## Updating The Formula
+</details>
 
-When a new `cli-bot` version is released:
+<details>
+<summary><b>joedocs</b>: an MCP documentation server</summary>
 
-1. Update `Formula/cli-bot.rb`
-2. Change the `url` to the new crate version
-3. Change the `sha256` to the new crates.io checksum
-4. Commit and push the tap update
+Needs `git` at run time (the Xcode Command Line Tools provide it).
 
-When a new `gmail-tool` version is released:
+```bash
+joedocs init                  # create the store
+joedocs check                 # verify the setup
+brew services start joedocs   # serve http://127.0.0.1:8750/mcp at login
+```
 
-1. Run `scripts/update-homebrew-formula.sh vX.Y.Z` from the upstream `gmail-tool` repository
-2. Review `Formula/gmail-tool.rb`
-3. Commit and push the tap update
+</details>
 
-When a new `joedocs` version is released:
+<details>
+<summary><b>passalong</b>: clipboard and file sharing over SSH</summary>
 
-1. Update `Formula/joedocs.rb`
-2. Change the `url` to the new crate version
-3. Change the `sha256` to the new crates.io checksum
-4. Commit and push the tap update
+Needs an SSH server you can log in to with a key.
 
-When a new `passalong` version is released:
+```bash
+passalong init              # create the configuration, pin the host key
+passalong check             # verify the connection and store
+passalong service-install   # keep it running in the background at login
+```
 
-1. Run `scripts/update-homebrew-formula.sh vX.Y.Z` from the upstream `passalong` repository
-2. Review `Formula/passalong.rb`
-3. Commit and push the tap update
+</details>
 
-Additional packages can be added alongside `cli-bot`, `gmail-tool`, `joedocs`, and `passalong` under `Formula/`.
+## 🔧 Maintainers
 
-For the upstream project and docs, see:
+New upstream releases are picked up automatically: the
+[Bump Formula](.github/workflows/bump-formula.yml) workflow opens a pull request
+for each one, and it merges once the
+[Test Formula](.github/workflows/test-formula.yml) workflow has built, tested,
+and audited every formula on macOS. See [`docs-release.md`](docs-release.md)
+for how it works, the one-time setup, and manual bumps.
 
-- `https://github.com/joelee/cli-bot`
-- `https://github.com/joelee/gmail-tool`
-- `https://github.com/joelee/joedocs-mcp`
-- `https://github.com/joelee/passalong`
+Bugs and feature requests for a tool belong in its upstream repository, linked
+in the table above. Packaging problems belong [here](https://github.com/joelee/homebrew-oss/issues).

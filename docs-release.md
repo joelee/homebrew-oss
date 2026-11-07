@@ -1,90 +1,152 @@
 # Release Update Guide
 
-## Update The Homebrew Formula
+Formula updates are automated. When an upstream project publishes a release,
+the [Bump Formula](.github/workflows/bump-formula.yml) workflow opens a
+pull request that points the formula at it and turns on auto-merge. The
+[Test Formula](.github/workflows/test-formula.yml) workflow builds, tests and
+audits every formula on macOS, and the pull request merges once that passes.
 
-### cli-bot
-
-When `cli-bot` publishes a new version to crates.io:
-
-1. Open `Formula/cli-bot.rb`
-2. Update the crate version in `url`
-3. Update `sha256` to the new crates.io checksum
-4. Commit and push
-
-### gmail-tool
-
-When `gmail-tool` publishes a new version to PyPI:
-
-1. In the upstream `gmail-tool` repository, run:
-
-```bash
-scripts/update-homebrew-formula.sh vX.Y.Z
+```
+upstream tag vX.Y.Z ─▶ publish to crates.io / PyPI ─▶ repository_dispatch ─┐
+daily schedule ─────────────────────────────────────────────────────────────┼─▶ Bump Formula ─▶ PR ─▶ Test Formula ─▶ auto-merge
+"Run workflow" button ──────────────────────────────────────────────────────┘
 ```
 
-2. Review `Formula/gmail-tool.rb`
-3. Commit and push
+## How a bump works
 
-### joedocs
+`scripts/bump-formula.sh FORMULA [VERSION]` does the edit, here and in the
+workflow. Without a version it uses the latest release on the registry.
 
-When `joedocs` publishes a new version to crates.io:
+| Formula | Source | What the script changes |
+| --- | --- | --- |
+| `cli-bot` | crates.io | `url` and `sha256` |
+| `joedocs` | crates.io | `url` and `sha256` |
+| `passalong` | crates.io | `url` and `sha256` |
+| `gmail-tool` | PyPI | the whole formula, Python resources included, from `scripts/update-homebrew-formula.sh` on gmail-tool's default branch and `uv.lock` at the release tag |
 
-1. Open `Formula/joedocs.rb`
-2. Update the crate version in `url`
-3. Update `sha256` to the new crates.io checksum
-4. Commit and push
+The script waits up to 10 minutes (`BUMP_WAIT_SECONDS`) for a release to
+appear on its registry, does nothing when the formula is already at that
+version, and refuses to go back to an older version or to a yanked crate.
 
-### passalong
+The workflow names the branch `bump/<formula>-<version>` and the commit and
+pull request `<formula> <version>`. It skips a version whose branch already
+exists, and closes open bump pull requests for older versions of the same
+formula.
 
-When `passalong` publishes a new version to crates.io:
+## When a bump fails
 
-1. In the upstream `passalong` repository, run:
+A failing Test Formula check stops auto-merge and leaves the pull request
+open. Push a fix to its branch, and it merges once the checks pass. To start
+over, close the pull request, delete its branch, and run the workflow again.
 
-```bash
-scripts/update-homebrew-formula.sh vX.Y.Z
-```
+## Bump by hand
 
-   It sets `url` and `sha256` in `Formula/passalong.rb` from crates.io, and
-   fails when that version is not published yet.
-
-2. Review `Formula/passalong.rb`
-3. Commit and push
-
-## Get The New Checksum
-
-You can fetch crate metadata from crates.io:
-
-```bash
-curl -s https://crates.io/api/v1/crates/cli-bot | jq -r '.versions[0].checksum'
-```
-
-Or compute it directly from the downloaded crate:
+From the Actions tab, run **Bump Formula** with a formula, and optionally a
+version. Or from a terminal:
 
 ```bash
-curl -L https://static.crates.io/crates/cli-bot/cli-bot-0.2.1.crate | shasum -a 256
+gh workflow run bump-formula.yml -R joelee/homebrew-oss -f formula=joedocs -f version=0.1.2
 ```
 
-Use the checksum of the published crates.io download, not the checksum of a local `target/package/*.crate` file.
+Or edit locally and open the pull request yourself:
 
-## Local Validation
+```bash
+scripts/bump-formula.sh passalong 0.3.0
+```
+
+## One-time setup
+
+### 1. Create the GitHub App
+
+1. Go to **Settings → Developer settings → GitHub Apps → New GitHub App**.
+2. Name it, for example `joelee-tap-bot`. Set any homepage URL, and turn off
+   **Webhook**.
+3. Under **Repository permissions**, set **Contents** and **Pull requests**
+   to **Read and write**. Metadata stays **Read-only**.
+4. Choose **Only on this account**, and create it.
+5. Note the **App ID**, and generate and download a **private key**.
+6. Under **Install App**, install it on `joelee/homebrew-oss` only.
+
+### 2. Configure this repository
+
+1. **Settings → Secrets and variables → Actions**:
+   - variable `TAP_BOT_APP_ID`: the App ID
+   - secret `TAP_BOT_PRIVATE_KEY`: the contents of the private key file
+2. **Settings → General → Pull Requests**: turn on **Allow auto-merge** and
+   **Automatically delete head branches**.
+3. **Settings → Rules → Rulesets → New branch ruleset** for the default
+   branch: turn on **Require status checks to pass** and add
+   **All formulae pass**. That check passes only when every formula in the
+   Test Formula matrix passes. Without a required check, auto-merge has
+   nothing to wait for.
+
+### 3. Notify the tap from upstream releases
+
+Add this job to the release workflow of each upstream repository, after the
+job that publishes to the registry. Give each repository the same
+`TAP_BOT_APP_ID` variable and `TAP_BOT_PRIVATE_KEY` secret. The App needs no
+installation on the upstream repository, because the token is for
+`homebrew-oss`.
+
+| Repository | Workflow | `needs:` | `FORMULA` |
+| --- | --- | --- | --- |
+| `joelee/cli-bot` | `release.yml` | `crates` | `cli-bot` |
+| `joelee/passalong` | `release.yml` | `crates` | `passalong` |
+| `joelee/gmail-tool` | `publish.yml` | `publish` | `gmail-tool` |
+
+```yaml
+  homebrew:
+    name: Ask the Homebrew tap to bump the formula
+    needs: crates # the job that publishes to crates.io or PyPI
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Get a token for joelee/homebrew-oss
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.TAP_BOT_APP_ID }}
+          private-key: ${{ secrets.TAP_BOT_PRIVATE_KEY }}
+          owner: joelee
+          repositories: homebrew-oss
+      - name: Send formula-release to the tap
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          FORMULA: cli-bot # the formula name in the tap
+        run: |
+          gh api repos/joelee/homebrew-oss/dispatches \
+            -f event_type=formula-release \
+            -f "client_payload[formula]=$FORMULA" \
+            -f "client_payload[version]=${GITHUB_REF_NAME#v}"
+```
+
+`joelee/joedocs-mcp` has no release workflow. Its releases are picked up by
+the daily check, or right away with the `gh workflow run` command above.
+
+The upstream `scripts/update-homebrew-formula.sh` scripts in `passalong` and
+`gmail-tool` still work for local use, and the bump script uses gmail-tool's
+script to generate its formula.
+
+## Get a checksum by hand
+
+```bash
+curl -s https://crates.io/api/v1/crates/cli-bot/0.4.1 | jq -r '.version.checksum'
+curl -L https://static.crates.io/crates/cli-bot/cli-bot-0.4.1.crate | shasum -a 256
+```
+
+Use the checksum of the published crates.io download, not the checksum of a
+local `target/package/*.crate` file.
+
+## Local validation
 
 With Homebrew 7 or later, run `brew trust joelee/oss` once first. For a tap
 cloned from a local folder, which cannot be trusted by name, set
 `HOMEBREW_NO_REQUIRE_TAP_TRUST=1` instead, as the workflow does.
 
 ```bash
-brew install --build-from-source joelee/oss/cli-bot
-brew test joelee/oss/cli-bot
-brew audit --strict joelee/oss/cli-bot
-
-brew install --build-from-source joelee/oss/gmail-tool
-brew test joelee/oss/gmail-tool
-brew audit --strict joelee/oss/gmail-tool
-
-brew install --build-from-source joelee/oss/joedocs
-brew test joelee/oss/joedocs
-brew audit --strict joelee/oss/joedocs
-
-brew install --build-from-source joelee/oss/passalong
-brew test joelee/oss/passalong
-brew audit --strict joelee/oss/passalong
+for formula in cli-bot gmail-tool joedocs passalong; do
+  brew install --build-from-source "joelee/oss/$formula"
+  brew test "joelee/oss/$formula"
+  brew audit --strict "joelee/oss/$formula"
+done
 ```

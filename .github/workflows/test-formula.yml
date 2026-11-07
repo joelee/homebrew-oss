@@ -43,3 +43,18 @@ jobs:
       - name: Audit formula
         run: |
           brew audit --strict "joelee/oss/${{ matrix.formula }}"
+
+  # One check that passes only when every formula above passes, for the
+  # branch ruleset to require before bump pull requests auto-merge.
+  all-formulae:
+    name: All formulae pass
+    needs: test-formula
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the formula results
+        env:
+          RESULT: ${{ needs.test-formula.result }}
+        run: |
+          echo "test-formula: $RESULT"
+          [ "$RESULT" = success ]

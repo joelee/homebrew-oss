@@ -1,0 +1,159 @@
+name: Bump Formula
+
+# Opens a pull request that points a formula at a new upstream release, and
+# turns on auto-merge so it merges once the Test Formula checks pass.
+#
+# - repository_dispatch (type formula-release): sent by an upstream release
+#   workflow once the release is on crates.io or PyPI, with a client_payload
+#   of {"formula": "<name>", "version": "X.Y.Z"}.
+# - schedule: checks every formula against its registry once a day, in case a
+#   dispatch was missed.
+# - workflow_dispatch: run by hand for one formula or all, at a given version
+#   or the latest.
+#
+# Needs a GitHub App installed on this repository with Contents and Pull
+# requests read and write access, its App ID in the TAP_BOT_APP_ID variable
+# and its private key in the TAP_BOT_PRIVATE_KEY secret. Pull requests opened
+# with the default GITHUB_TOKEN would not start the Test Formula workflow.
+# See docs-release.md.
+
+on:
+  repository_dispatch:
+    types: [formula-release]
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+    inputs:
+      formula:
+        description: Formula to bump
+        type: choice
+        options: [all, cli-bot, gmail-tool, joedocs, passalong]
+        default: all
+      version:
+        description: Version (X.Y.Z); leave empty for the latest release
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Choose formulae
+    runs-on: ubuntu-latest
+    outputs:
+      formulae: ${{ steps.plan.outputs.formulae }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_FORMULA: ${{ github.event.client_payload.formula }}
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          INPUT_FORMULA: ${{ inputs.formula }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          all=(cli-bot gmail-tool joedocs passalong)
+          case "$EVENT" in
+            repository_dispatch) formula="$DISPATCH_FORMULA"; version="$DISPATCH_VERSION" ;;
+            workflow_dispatch) formula="$INPUT_FORMULA"; version="$INPUT_VERSION" ;;
+            *) formula=all; version="" ;;
+          esac
+          version="${version#v}"
+          if [ -n "$version" ] && ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::version '$version' is not of the form X.Y.Z"
+            exit 1
+          fi
+          if [ "$formula" = all ]; then
+            if [ -n "$version" ]; then
+              echo "::error::a version needs a single formula"
+              exit 1
+            fi
+            selected=("${all[@]}")
+          elif printf ' %s ' "${all[@]}" | grep -qF " $formula "; then
+            selected=("$formula")
+          else
+            echo "::error::unknown formula '$formula'"
+            exit 1
+          fi
+          echo "formulae=$(printf '%s\n' "${selected[@]}" | jq -Rnc '[inputs]')" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  bump:
+    name: Bump ${{ matrix.formula }}
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        formula: ${{ fromJSON(needs.plan.outputs.formulae) }}
+    concurrency:
+      group: bump-formula-${{ matrix.formula }}
+      cancel-in-progress: false
+    steps:
+      - name: Get a token for the tap bot
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.TAP_BOT_APP_ID }}
+          private-key: ${{ secrets.TAP_BOT_PRIVATE_KEY }}
+
+      - name: Check out the tap
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ steps.app.outputs.token }}
+
+      - name: Set up uv
+        if: matrix.formula == 'gmail-tool'
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        if: matrix.formula == 'gmail-tool'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update the formula
+        id: bump
+        env:
+          FORMULA: ${{ matrix.formula }}
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: scripts/bump-formula.sh "$FORMULA" ${VERSION:+"$VERSION"}
+
+      - name: Open a pull request and turn on auto-merge
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          FORMULA: ${{ matrix.formula }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          BASE: ${{ github.event.repository.default_branch }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          branch="bump/$FORMULA-$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            echo "::notice::$branch already exists, so a pull request for $FORMULA $VERSION is already open; delete the branch to open a new one"
+            exit 0
+          fi
+
+          bot="${APP_SLUG}[bot]"
+          bot_id="$(gh api "/users/$bot" --jq .id)"
+          git config user.name "$bot"
+          git config user.email "$bot_id+$bot@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "$FORMULA $VERSION"
+          git push origin "$branch"
+
+          body="Points \`Formula/$FORMULA.rb\` at $FORMULA $VERSION.
+
+          Opened by the [Bump Formula]($RUN_URL) workflow ($GITHUB_EVENT_NAME). It merges by itself once the Test Formula checks pass."
+          gh pr create --base "$BASE" --head "$branch" --title "$FORMULA $VERSION" --body "$body"
+          gh pr merge "$branch" --auto --squash --delete-branch
+
+          # Close bump pull requests for older versions of this formula.
+          gh pr list --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | startswith(\"bump/$FORMULA-\")) | select(.headRefName != \"$branch\") | .number" \
+            | while read -r number; do
+                gh pr close "$number" --delete-branch --comment "Superseded by $FORMULA $VERSION."
+              done

@@ -62,7 +62,7 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 - has a `service` block, so `brew services start joedocs` runs `joedocs serve` at login, logging to `var/log/joedocs.log`
 - includes `caveats` pointing to `storage.home` in `~/.config/joedocs/config.toml`, `joedocs init`, `project add`, `key create`, and `brew services`
 - its test creates a store, a project and a key in the test folder through `JOEDOCS__STORAGE__*` overrides, runs `joedocs check`, and checks `GET /health` of `joedocs serve` on a free local port, so it needs no network
-- is updated by hand: set `url` and `sha256` from crates.io
+- is bumped by the Bump Formula workflow, which sets `url` and `sha256` from crates.io
 
 `Formula/passalong.rb`:
 
@@ -71,28 +71,34 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 - builds with `cargo install`, depending on `rust` at build time (the crate needs Rust 1.98 or later)
 - includes `caveats` pointing to `passalong init`, `passalong check`, and `passalong service-install`
 - its test stores and prints text through a local store in the test folder, so it needs no SSH server or network
-- is updated by `scripts/update-homebrew-formula.sh vX.Y.Z [TAP_DIR]` in the upstream repository, which sets `url` and `sha256` from crates.io
+- is bumped by the Bump Formula workflow, which sets `url` and `sha256` from crates.io; `scripts/update-homebrew-formula.sh vX.Y.Z [TAP_DIR]` in the upstream repository does the same by hand
 
-## Recommended Release Update Flow
+## Release Update Flow
 
-When `cli-bot` publishes a new crates.io version:
+Formula bumps are automated; `docs-release.md` has the details and the
+one-time setup.
 
-1. Update `Formula/cli-bot.rb`
-2. Change the crate version in `url`
-3. Update the `sha256`
-4. Run local Homebrew validation on macOS:
-   `brew install --build-from-source joelee/oss/cli-bot`
-   `brew test joelee/oss/cli-bot`
-   `brew audit --strict joelee/oss/cli-bot`
-5. Commit and push the tap update
+- `.github/workflows/bump-formula.yml` runs on a `formula-release`
+  `repository_dispatch` from an upstream release workflow (payload
+  `{"formula": ..., "version": ...}`), daily on a schedule, and by hand. It
+  runs `scripts/bump-formula.sh`, opens a `bump/<formula>-<version>` pull
+  request titled `<formula> <version>`, and turns on auto-merge.
+- It authenticates as a GitHub App (`TAP_BOT_APP_ID` variable,
+  `TAP_BOT_PRIVATE_KEY` secret), because pull requests opened with the
+  default `GITHUB_TOKEN` do not start the Test Formula workflow.
+- The branch ruleset requires the `All formulae pass` check from
+  `test-formula.yml`, so a bump merges only when every formula builds, tests
+  and audits.
+- `scripts/bump-formula.sh FORMULA [VERSION]` sets `url` and `sha256` from
+  crates.io for `cli-bot`, `joedocs` and `passalong`. For `gmail-tool` it
+  runs `scripts/update-homebrew-formula.sh` from gmail-tool's default branch
+  with `uv.lock` from the release tag, which regenerates the whole formula.
+- When adding a formula, add it to the case statement in
+  `scripts/bump-formula.sh`, the choices and list in `bump-formula.yml`, and
+  the matrix in `test-formula.yml`.
 
-When `joedocs` publishes a new crates.io version, update `url` and `sha256`
-in `Formula/joedocs.rb` as for `cli-bot`, then validate with `joedocs`.
-
-When `passalong` publishes a new crates.io version, run
-`scripts/update-homebrew-formula.sh vX.Y.Z` from the `passalong`
-repository, validate as above with `passalong` in place of `cli-bot`, then
-commit and push.
+To bump by hand, run `scripts/bump-formula.sh <formula> [X.Y.Z]`, validate on
+macOS as below, then commit and push.
 
 ## Known Gaps
 
@@ -106,7 +112,7 @@ commit and push.
 2. Let the macOS GitHub Actions workflow validate the tap
 3. Test `brew install joelee/oss/cli-bot` on a real macOS machine
 4. Add more formulae under `Formula/` as needed
-5. Optionally automate formula version bumps from upstream releases
+5. Build bottles so users do not compile from source
 
 ## Verification
 

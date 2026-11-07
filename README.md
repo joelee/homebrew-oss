@@ -106,9 +106,12 @@ passalong service-install   # keep it running in the background at login
 
 ## 🔧 Maintainers
 
-Release and formula update steps live in [`docs-release.md`](docs-release.md).
-Every pull request and push to `main` is built, tested, and audited on macOS by
-the [Test Formula](.github/workflows/test-formula.yml) workflow.
+New upstream releases are picked up automatically: the
+[Bump Formula](.github/workflows/bump-formula.yml) workflow opens a pull request
+for each one, and it merges once the
+[Test Formula](.github/workflows/test-formula.yml) workflow has built, tested,
+and audited every formula on macOS. See [`docs-release.md`](docs-release.md)
+for how it works, the one-time setup, and manual bumps.
 
 Bugs and feature requests for a tool belong in its upstream repository, linked
 in the table above. Packaging problems belong [here](https://github.com/joelee/homebrew-oss/issues).

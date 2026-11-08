@@ -64,13 +64,13 @@ scripts/bump-formula.sh passalong 0.3.0
 3. Under **Repository permissions**, set **Contents** and **Pull requests**
    to **Read and write**. Metadata stays **Read-only**.
 4. Choose **Only on this account**, and create it.
-5. Note the **App ID**, and generate and download a **private key**.
+5. Note the **Client ID**, and generate and download a **private key**.
 6. Under **Install App**, install it on `joelee/homebrew-oss` only.
 
 ### 2. Configure this repository
 
 1. **Settings → Secrets and variables → Actions**:
-   - variable `TAP_BOT_APP_ID`: the App ID
+   - variable `TAP_BOT_CLIENT_ID`: the App's Client ID
    - secret `TAP_BOT_PRIVATE_KEY`: the contents of the private key file
 2. **Settings → General → Pull Requests**: turn on **Allow auto-merge** and
    **Automatically delete head branches**.
@@ -84,7 +84,7 @@ scripts/bump-formula.sh passalong 0.3.0
 
 Add this job to the release workflow of each upstream repository, after the
 job that publishes to the registry. Give each repository the same
-`TAP_BOT_APP_ID` variable and `TAP_BOT_PRIVATE_KEY` secret. The App needs no
+`TAP_BOT_CLIENT_ID` variable and `TAP_BOT_PRIVATE_KEY` secret. The App needs no
 installation on the upstream repository, because the token is for
 `homebrew-oss`.
 
@@ -93,19 +93,20 @@ installation on the upstream repository, because the token is for
 | `joelee/cli-bot` | `release.yml` | `crates` | `cli-bot` |
 | `joelee/passalong` | `release.yml` | `crates` | `passalong` |
 | `joelee/gmail-tool` | `publish.yml` | `publish` | `gmail-tool` |
+| `joelee/joedocs-mcp` | `release.yml` | (a step in `publish`) | `joedocs` |
 
 ```yaml
   homebrew:
     name: Ask the Homebrew tap to bump the formula
     needs: crates # the job that publishes to crates.io or PyPI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions: {}
     steps:
       - name: Get a token for joelee/homebrew-oss
         id: app
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.TAP_BOT_APP_ID }}
+          client-id: ${{ vars.TAP_BOT_CLIENT_ID }}
           private-key: ${{ secrets.TAP_BOT_PRIVATE_KEY }}
           owner: joelee
           repositories: homebrew-oss
@@ -140,8 +141,8 @@ local `target/package/*.crate` file.
 ## Local validation
 
 With Homebrew 7 or later, run `brew trust joelee/oss` once first. For a tap
-cloned from a local folder, which cannot be trusted by name, set
-`HOMEBREW_NO_REQUIRE_TAP_TRUST=1` instead, as the workflow does.
+cloned from a local folder, run it after `brew tap joelee/oss <folder>`, as
+the workflow does, so that it records the folder.
 
 ```bash
 for formula in cli-bot gmail-tool joedocs passalong; do

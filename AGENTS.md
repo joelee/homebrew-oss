@@ -83,7 +83,7 @@ one-time setup.
   `{"formula": ..., "version": ...}`), daily on a schedule, and by hand. It
   runs `scripts/bump-formula.sh`, opens a `bump/<formula>-<version>` pull
   request titled `<formula> <version>`, and turns on auto-merge.
-- It authenticates as a GitHub App (`TAP_BOT_APP_ID` variable,
+- It authenticates as a GitHub App (`TAP_BOT_CLIENT_ID` variable,
   `TAP_BOT_PRIVATE_KEY` secret), because pull requests opened with the
   default `GITHUB_TOKEN` do not start the Test Formula workflow.
 - The branch ruleset requires the `All formulae pass` check from
@@ -116,15 +116,15 @@ macOS as below, then commit and push.
 
 ## Verification
 
-Useful commands for a Homebrew-focused session on macOS. Homebrew 7 and
-later refuse formulae from untrusted taps, and a tap cloned from a local
-folder cannot be trusted by name, so set `HOMEBREW_NO_REQUIRE_TAP_TRUST=1`
-for it, as the workflow does. For the tap from GitHub, run
-`brew trust joelee/oss` instead.
+Useful commands for a Homebrew-focused session on macOS. Homebrew refuses
+formulae from untrusted taps. Run `brew trust joelee/oss` after tapping a
+local folder, as the workflow does: it then records the folder, while run
+before tapping it records the GitHub name, which a local tap never matches.
+Do not set the deprecated `HOMEBREW_NO_REQUIRE_TAP_TRUST`.
 
 ```bash
-export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 brew tap joelee/oss /path/to/homebrew-oss
+brew trust joelee/oss
 brew install --build-from-source joelee/oss/cli-bot
 brew test joelee/oss/cli-bot
 brew audit --strict joelee/oss/cli-bot

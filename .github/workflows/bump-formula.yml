@@ -12,7 +12,7 @@ name: Bump Formula
 #   or the latest.
 #
 # Needs a GitHub App installed on this repository with Contents and Pull
-# requests read and write access, its App ID in the TAP_BOT_APP_ID variable
+# requests read and write access, its client ID in the TAP_BOT_CLIENT_ID variable
 # and its private key in the TAP_BOT_PRIVATE_KEY secret. Pull requests opened
 # with the default GITHUB_TOKEN would not start the Test Formula workflow.
 # See docs-release.md.
@@ -40,7 +40,7 @@ permissions:
 jobs:
   plan:
     name: Choose formulae
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       formulae: ${{ steps.plan.outputs.formulae }}
       version: ${{ steps.plan.outputs.version }}
@@ -82,7 +82,7 @@ jobs:
   bump:
     name: Bump ${{ matrix.formula }}
     needs: plan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -93,24 +93,26 @@ jobs:
     steps:
       - name: Get a token for the tap bot
         id: app
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.TAP_BOT_APP_ID }}
+          client-id: ${{ vars.TAP_BOT_CLIENT_ID }}
           private-key: ${{ secrets.TAP_BOT_PRIVATE_KEY }}
 
       - name: Check out the tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
           token: ${{ steps.app.outputs.token }}
 
       - name: Set up uv
         if: matrix.formula == 'gmail-tool'
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
 
       - name: Set up Python
         if: matrix.formula == 'gmail-tool'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 

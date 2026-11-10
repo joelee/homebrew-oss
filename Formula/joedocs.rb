@@ -1,8 +1,8 @@
 class Joedocs < Formula
   desc "MCP server for multi-project documentation with git history and search"
   homepage "https://github.com/joelee/joedocs-mcp"
-  url "https://static.crates.io/crates/joedocs/joedocs-0.4.0.crate"
-  sha256 "c8dc8eafb9f4f247af2993d080830810af85d59627b00bec41a98e82b257148a"
+  url "https://static.crates.io/crates/joedocs/joedocs-0.4.1.crate"
+  sha256 "f1ec3933610ec8c741064e5defaea54883bec9c5c330873ddc2b22b9f5f9ce15"
   license "Apache-2.0"
 
   depends_on "rust" => :build

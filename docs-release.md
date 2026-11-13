@@ -4,7 +4,14 @@ Formula updates are automated. When an upstream project publishes a release,
 the [Bump Formula](.github/workflows/bump-formula.yml) workflow opens a
 pull request that points the formula at it and turns on auto-merge. The
 [Test Formula](.github/workflows/test-formula.yml) workflow builds, tests and
-audits every formula on macOS, and the pull request merges once that passes.
+audits the bumped formula on macOS, and the pull request merges once that
+passes.
+
+Test Formula tests only the formulae whose `Formula/<name>.rb` a pull request
+or push changes. A change to the workflow itself tests every formula, and so
+do its weekly scheduled run and a run started by hand from the Actions tab,
+which catch breakage from new macOS, Homebrew or Rust releases. A change that
+touches no formula, such as a README edit, tests none.
 
 ```
 upstream tag vX.Y.Z ─▶ publish to crates.io / PyPI ─▶ repository_dispatch ─┐
@@ -76,8 +83,11 @@ scripts/bump-formula.sh passalong 0.3.0
    **Automatically delete head branches**.
 3. **Settings → Rules → Rulesets → New branch ruleset** for the default
    branch: turn on **Require status checks to pass** and add
-   **All formulae pass**. That check passes only when every formula in the
-   Test Formula matrix passes. Without a required check, auto-merge has
+   **All formulae pass**. That check passes only when every formula Test
+   Formula chose to test passes, or when the change touches no formula.
+   Require only this check, not the per-formula `test-formula (...)` checks,
+   which do not run for formulae a change leaves alone. Without a required
+   check, auto-merge has
    nothing to wait for.
 
 ### 3. Notify the tap from upstream releases

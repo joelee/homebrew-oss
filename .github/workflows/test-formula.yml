@@ -1,27 +1,106 @@
 name: Test Formula
 
+# Builds, tests and audits on macOS only the formulae a change touches:
+#
+# - pull_request: the formulae whose Formula/<name>.rb the pull request
+#   changes, compared with its base branch.
+# - push to main: the formulae the pushed commits change.
+# - schedule (weekly) and workflow_dispatch: every formula, to catch breakage
+#   from new macOS, Homebrew or toolchain releases in formulae nobody touched.
+#
+# A change to this workflow tests every formula. A change that touches no
+# formula, such as a README edit, tests none, and the All formulae pass check
+# still passes.
+
 on:
   pull_request:
   push:
     branches:
       - main
+  schedule:
+    - cron: "23 6 * * 1"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+# A newer push to a pull request cancels its older, now pointless, run.
+concurrency:
+  group: test-formula-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  changes:
+    name: Choose formulae
+    runs-on: ubuntu-24.04
+    outputs:
+      formulae: ${{ steps.choose.outputs.formulae }}
+    steps:
+      - name: Check out tap repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # On a pull request the checkout is GitHub's merge commit, whose first
+      # parent is the base branch, so HEAD^1..HEAD is what the pull request
+      # changes. On a push it is the pushed range. Anything else, or a push
+      # whose previous commit is unknown, tests every formula.
+      - name: Choose the formulae to test
+        id: choose
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          mapfile -t all < <(find Formula -maxdepth 1 -name '*.rb' -exec basename {} .rb \; | sort)
+          range=()
+          case "$EVENT" in
+            pull_request) range=(HEAD^1 HEAD) ;;
+            push)
+              if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2> /dev/null; then
+                range=("$BEFORE" HEAD)
+              fi
+              ;;
+          esac
+
+          if [ "${#range[@]}" -eq 0 ]; then
+            echo "$EVENT: testing every formula"
+            selected=("${all[@]}")
+          else
+            mapfile -t changed < <(git diff --name-only "${range[@]}")
+            echo "Files changed in ${range[*]}:"
+            printf '  %s\n' "${changed[@]}"
+            if printf '%s\n' "${changed[@]}" | grep -qxF .github/workflows/test-formula.yml; then
+              echo "The Test Formula workflow changed: testing every formula"
+              selected=("${all[@]}")
+            else
+              selected=()
+              for formula in "${all[@]}"; do
+                if printf '%s\n' "${changed[@]}" | grep -qxF "Formula/$formula.rb"; then
+                  selected+=("$formula")
+                fi
+              done
+            fi
+          fi
+
+          formulae="$(printf '%s\n' "${selected[@]}" | jq -Rnc '[inputs | select(length > 0)]')"
+          echo "Formulae to test: $formulae"
+          echo "formulae=$formulae" >> "$GITHUB_OUTPUT"
+
   test-formula:
+    needs: changes
+    if: needs.changes.outputs.formulae != '[]'
     strategy:
       fail-fast: false
       matrix:
-        formula:
-          - cli-bot
-          - gmail-tool
-          - joedocs
-          - passalong
+        formula: ${{ fromJSON(needs.changes.outputs.formulae) }}
     runs-on: macos-latest
 
     steps:
       - name: Check out tap repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Homebrew loads formulae only from trusted taps. Trust the tap after
       # tapping it: the tap's remote is then this checkout's folder, and
@@ -43,17 +122,27 @@ jobs:
         run: |
           brew audit --strict "joelee/oss/${{ matrix.formula }}"
 
-  # One check that passes only when every formula above passes, for the
-  # branch ruleset to require before bump pull requests auto-merge.
+  # One check for the branch ruleset to require before pull requests, bump
+  # pull requests included, can merge. It passes when every chosen formula
+  # passes, or when the change touches no formula and none was chosen.
   all-formulae:
     name: All formulae pass
-    needs: test-formula
+    needs: [changes, test-formula]
     if: always()
     runs-on: ubuntu-24.04
     steps:
       - name: Check the formula results
         env:
+          CHANGES: ${{ needs.changes.result }}
+          FORMULAE: ${{ needs.changes.outputs.formulae }}
           RESULT: ${{ needs.test-formula.result }}
         run: |
+          echo "changes: $CHANGES"
+          echo "formulae: $FORMULAE"
           echo "test-formula: $RESULT"
-          [ "$RESULT" = success ]
+          [ "$CHANGES" = success ] || exit 1
+          case "$RESULT" in
+            success) ;;
+            skipped) [ "$FORMULAE" = '[]' ] ;;
+            *) exit 1 ;;
+          esac

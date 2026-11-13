@@ -16,6 +16,12 @@ brew trust joelee/oss && brew tap joelee/oss
 
 ---
 
+## A note from me
+
+This repository brings together the Homebrew packages for my open-source projects, making them a little easier to install and keep up to date. I hope you find something useful here. Feedback, suggestions and contributions are always welcome.
+
+— Joe
+
 ## 📦 Packages
 
 | Package | What it does | Latest release | Install |

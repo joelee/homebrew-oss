@@ -33,7 +33,7 @@ The repository name is intended to map to the GitHub repository `joelee/homebrew
 - The formula currently targets `cli-bot` version `0.1.1`.
 - The formula checksum currently matches the crates.io release metadata.
 - A macOS GitHub Actions workflow exists at `.github/workflows/test-formula.yml`.
-- The workflow is intended to run `brew install`, `brew test`, and `brew audit` for `joelee/oss/cli-bot`.
+- The workflow runs `brew install`, `brew test`, and `brew audit` for each formula a change touches.
 
 ## Important Constraints
 
@@ -86,16 +86,20 @@ one-time setup.
 - It authenticates as a GitHub App (`TAP_BOT_CLIENT_ID` variable,
   `TAP_BOT_PRIVATE_KEY` secret), because pull requests opened with the
   default `GITHUB_TOKEN` do not start the Test Formula workflow.
+- `test-formula.yml` builds, tests and audits only the formulae whose
+  `Formula/<name>.rb` a pull request or push changes. A change to the
+  workflow itself, the weekly schedule and a manual run test every formula;
+  a change that touches no formula tests none.
 - The branch ruleset requires the `All formulae pass` check from
-  `test-formula.yml`, so a bump merges only when every formula builds, tests
-  and audits.
+  `test-formula.yml`, so a bump merges only when the formula it changes
+  builds, tests and audits. The check also passes when no formula was chosen.
 - `scripts/bump-formula.sh FORMULA [VERSION]` sets `url` and `sha256` from
   crates.io for `cli-bot`, `joedocs` and `passalong`. For `gmail-tool` it
   runs `scripts/update-homebrew-formula.sh` from gmail-tool's default branch
   with `uv.lock` from the release tag, which regenerates the whole formula.
 - When adding a formula, add it to the case statement in
-  `scripts/bump-formula.sh`, the choices and list in `bump-formula.yml`, and
-  the matrix in `test-formula.yml`.
+  `scripts/bump-formula.sh` and the choices and list in `bump-formula.yml`.
+  `test-formula.yml` finds formulae in `Formula/` by itself.
 
 To bump by hand, run `scripts/bump-formula.sh <formula> [X.Y.Z]`, validate on
 macOS as below, then commit and push.
